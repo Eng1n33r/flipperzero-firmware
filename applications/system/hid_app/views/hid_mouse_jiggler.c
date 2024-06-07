@@ -17,7 +17,6 @@ typedef struct {
     bool running;
     int interval_idx;
     uint8_t counter;
-    HidTransport transport;
 } HidMouseJigglerModel;
 
 const int intervals[6] = {500, 2000, 5000, 10000, 30000, 60000};
@@ -27,16 +26,16 @@ static void hid_mouse_jiggler_draw_callback(Canvas* canvas, void* context) {
     HidMouseJigglerModel* model = context;
 
     // Header
-    if(model->transport == HidTransportBle) {
-        if(model->connected) {
-            canvas_draw_icon(canvas, 0, 0, &I_Ble_connected_15x15);
-        } else {
-            canvas_draw_icon(canvas, 0, 0, &I_Ble_disconnected_15x15);
-        }
+#ifdef HID_TRANSPORT_BLE
+    if(model->connected) {
+        canvas_draw_icon(canvas, 0, 0, &I_Ble_connected_15x15);
+    } else {
+        canvas_draw_icon(canvas, 0, 0, &I_Ble_disconnected_15x15);
     }
+#endif
 
     canvas_set_font(canvas, FontPrimary);
-    elements_multiline_text_aligned(canvas, 17, 2, AlignLeft, AlignTop, "Mouse Jiggler");
+    elements_multiline_text_aligned(canvas, 27, 2, AlignLeft, AlignTop, "Mouse Jiggler");
 
     // Timeout
     elements_multiline_text(canvas, AlignLeft, 26, "Interval (ms):");
@@ -146,13 +145,7 @@ HidMouseJiggler* hid_mouse_jiggler_alloc(Hid* hid) {
         hid_mouse_jiggler_timer_callback, FuriTimerTypePeriodic, hid_mouse_jiggler);
 
     with_view_model(
-        hid_mouse_jiggler->view,
-        HidMouseJigglerModel * model,
-        {
-            model->transport = hid->transport;
-            model->interval_idx = 2;
-        },
-        true);
+        hid_mouse_jiggler->view, HidMouseJigglerModel * model, { model->interval_idx = 2; }, true);
 
     return hid_mouse_jiggler;
 }
