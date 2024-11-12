@@ -586,6 +586,7 @@ void subghz_cli_command_tx_from_file(Cli* cli, FuriString* args, void* context) 
     furi_string_set(file_name, EXT_PATH("subghz/test.sub"));
     uint32_t repeat = 10;
     uint32_t device_ind = 0; // 0 - CC1101_INT, 1 - CC1101_EXT
+    uint32_t delay = 0; // Delay in milliseconds
 
     Storage* storage = furi_record_open(RECORD_STORAGE);
     FlipperFormat* fff_data_file = flipper_format_file_alloc(storage);
@@ -756,6 +757,11 @@ void subghz_cli_command_tx_from_file(Cli* cli, FuriString* args, void* context) 
             flipper_format_delete_key(fff_data_file, "Repeat");
         }
 
+        // Load delay
+        if(!flipper_format_read_uint32(fff_data_file, "Delay", &delay, 1)) {
+            delay = 0; // Default to 0 if delay is not specified
+        }
+
         if(is_init_protocol) {
             check_file = true;
         } else {
@@ -799,6 +805,11 @@ void subghz_cli_command_tx_from_file(Cli* cli, FuriString* args, void* context) 
                 repeat--;
                 if(!cli_cmd_interrupt_received(cli) && repeat)
                     subghz_transmitter_deserialize(transmitter, fff_data_raw);
+            }
+
+            // Apply delay if specified
+            if(delay > 0 && repeat) {
+                furi_delay_ms(delay);
             }
 
         } while(!cli_cmd_interrupt_received(cli) &&
