@@ -6,20 +6,21 @@
 
 #define TAG "DesktopSettings"
 
-#define DESKTOP_SETTINGS_VER_14 (14)
-#define DESKTOP_SETTINGS_VER    (15)
+#define DESKTOP_SETTINGS_VER_15 (15)
+#define DESKTOP_SETTINGS_VER    (16)
 
 #define DESKTOP_SETTINGS_PATH  INT_PATH(DESKTOP_SETTINGS_FILE_NAME)
 #define DESKTOP_SETTINGS_MAGIC (0x17)
 
 typedef struct {
     uint32_t auto_lock_delay_ms;
+    uint32_t auto_poweroff_delay_ms;  //--- auto_power_off_timer
     uint8_t displayBatteryPercentage;
     uint8_t dummy_mode;
     uint8_t display_clock;
     FavoriteApp favorite_apps[FavoriteAppNumber];
     FavoriteApp dummy_apps[DummyAppNumber];
-} DesktopSettingsV14;
+} DesktopSettingsV15;
 
 // Actual size of DesktopSettings v13
 //static_assert(sizeof(DesktopSettingsV13) == 1234);
@@ -41,31 +42,32 @@ void desktop_settings_load(DesktopSettings* settings) {
                 DESKTOP_SETTINGS_MAGIC,
                 DESKTOP_SETTINGS_VER);
 
-        } else if(version == DESKTOP_SETTINGS_VER_14) {
-            DesktopSettingsV14* settings_v14 = malloc(sizeof(DesktopSettingsV14));
+        } else if(version == DESKTOP_SETTINGS_VER_15) {
+            DesktopSettingsV15* settings_v15 = malloc(sizeof(DesktopSettingsV15));
 
             success = saved_struct_load(
                 DESKTOP_SETTINGS_PATH,
-                settings_v14,
-                sizeof(DesktopSettingsV14),
+                settings_v15,
+                sizeof(DesktopSettingsV15),
                 DESKTOP_SETTINGS_MAGIC,
-                DESKTOP_SETTINGS_VER_14);
+                DESKTOP_SETTINGS_VER_15);
 
             if(success) {
-                settings->auto_lock_delay_ms = settings_v14->auto_lock_delay_ms;
-                settings->auto_poweroff_delay_ms = 0;
-                settings->displayBatteryPercentage = settings_v14->displayBatteryPercentage;
-                settings->dummy_mode = settings_v14->dummy_mode;
-                settings->display_clock = settings_v14->display_clock;
+                settings->auto_lock_delay_ms = settings_v15->auto_lock_delay_ms;
+                settings->auto_poweroff_delay_ms = settings_v15->auto_poweroff_delay_ms;
+                settings->restrict_autolock_autopoweroff=0;
+                settings->displayBatteryPercentage = settings_v15->displayBatteryPercentage;
+                settings->dummy_mode = settings_v15->dummy_mode;
+                settings->display_clock = settings_v15->display_clock;
                 memcpy(
                     settings->favorite_apps,
-                    settings_v14->favorite_apps,
+                    settings_v15->favorite_apps,
                     sizeof(settings->favorite_apps));
                 memcpy(
-                    settings->dummy_apps, settings_v14->dummy_apps, sizeof(settings->dummy_apps));
+                    settings->dummy_apps, settings_v15->dummy_apps, sizeof(settings->dummy_apps));
             }
 
-            free(settings_v14);
+            free(settings_v15);
         }
 
     } while(false);

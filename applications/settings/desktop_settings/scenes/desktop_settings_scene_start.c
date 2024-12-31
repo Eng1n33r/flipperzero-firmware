@@ -10,6 +10,7 @@ typedef enum {
     DesktopSettingsPinSetup = 0,
     DesktopSettingsAutoLockDelay,
     DesktopSettingsAutoPowerOff,
+    DesktopSettingsRestrictAutoLockAutoPowerOff,
     DesktopSettingsBatteryDisplay,
     DesktopSettingsClockDisplay,
     DesktopSettingsChangeName,
@@ -62,6 +63,16 @@ const char* const clock_enable_text[CLOCK_ENABLE_COUNT] = {
 
 const uint32_t clock_enable_value[CLOCK_ENABLE_COUNT] = {0, 1};
 
+//--- Menu options for restrict_autolock_autopoweroff
+#define RESTRICT_AUTOLOCK_AUTOPOWEROFF_COUNT 2
+const char* const restrict_autolock_autopoweroff_text[RESTRICT_AUTOLOCK_AUTOPOWEROFF_COUNT] = {
+    "OFF",
+    "ON",
+};
+
+const uint32_t restrict_autolock_autopoweroff_value[RESTRICT_AUTOLOCK_AUTOPOWEROFF_COUNT] = {0, 1};
+//---
+
 #define BATTERY_VIEW_COUNT 6
 
 const char* const battery_view_count_text[BATTERY_VIEW_COUNT] =
@@ -113,7 +124,15 @@ static void desktop_settings_scene_start_auto_lock_delay_changed(VariableItem* i
     variable_item_set_current_value_text(item, auto_lock_delay_text[index]);
     app->settings.auto_lock_delay_ms = auto_lock_delay_value[index];
 }
+//--- restrict_autolock_autopoweroff
+static void desktop_settings_scene_start_restrict_autolock_autopoweroff_changed(VariableItem* item) {
+    DesktopSettingsApp* app = variable_item_get_context(item);
+    uint8_t index = variable_item_get_current_value_index(item);
 
+    variable_item_set_current_value_text(item, restrict_autolock_autopoweroff_text[index]);
+    app->settings.restrict_autolock_autopoweroff = restrict_autolock_autopoweroff_value[index];
+}
+//---
 void desktop_settings_scene_start_on_enter(void* context) {
     DesktopSettingsApp* app = context;
     VariableItemList* variable_item_list = app->variable_item_list;
@@ -149,6 +168,22 @@ void desktop_settings_scene_start_on_enter(void* context) {
         AUTO_POWEROFF_DELAY_COUNT);
     variable_item_set_current_value_index(item, value_index);
     variable_item_set_current_value_text(item, auto_poweroff_delay_text[value_index]);
+    // ---
+ 
+    // --- Add menu line for restrict_autolock_autopoweroff
+    item = variable_item_list_add(
+        variable_item_list,
+        "USB restrict AutoLock/AutoPowerOff",
+        RESTRICT_AUTOLOCK_AUTOPOWEROFF_COUNT,
+        desktop_settings_scene_start_restrict_autolock_autopoweroff_changed,
+        app);
+
+    value_index = value_index_uint32(
+        app->settings.restrict_autolock_autopoweroff,
+        restrict_autolock_autopoweroff_value,
+        RESTRICT_AUTOLOCK_AUTOPOWEROFF_COUNT);
+    variable_item_set_current_value_index(item, value_index);
+    variable_item_set_current_value_text(item, restrict_autolock_autopoweroff_text[value_index]);
     // ---
 
     item = variable_item_list_add(

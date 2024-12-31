@@ -12,6 +12,7 @@
 
 #include "scenes/desktop_scene.h"
 #include "scenes/desktop_scene_locked.h"
+#include "furi_hal_power.h"
 
 #define TAG "Desktop"
 
@@ -154,10 +155,18 @@ static bool desktop_custom_event_callback(void* context, uint32_t event) {
 
     } else if(event == DesktopGlobalAutoLock) {
         if(!desktop->app_running && !desktop->locked) {
+            // if restrict_autolock_autopoweroff enabled and device charging or device charged but still connected to USB then break desktop locking.
+            if ((desktop->settings.restrict_autolock_autopoweroff) && ((furi_hal_power_is_charging()) || (furi_hal_power_is_charging_done()))){
+            return(0);
+            } 
             desktop_lock(desktop);
         }
-    } else if(event == DesktopGlobalAutoPowerOff) {
+    } else if(event == DesktopGlobalAutoPowerOff) {      
         if(!desktop->app_running) {
+            // if restrict_autolock_autopoweroff enabled and device charging or device charged but still connected to USB then break poweoff.
+            if ((desktop->settings.restrict_autolock_autopoweroff) && ((furi_hal_power_is_charging()) || (furi_hal_power_is_charging_done()))){
+            return(0);
+            }    
             Power* power = furi_record_open(RECORD_POWER);
             power_off(power);
         }

@@ -38,9 +38,8 @@ typedef struct {
 
 typedef struct {
     uint32_t auto_lock_delay_ms;
-    //--- auto_power_off_timer
-    uint32_t auto_poweroff_delay_ms;
-    //---
+    uint32_t auto_poweroff_delay_ms;  //--- auto_power_off_timer
+    uint8_t restrict_autolock_autopoweroff;  //--- restrict_autolock_autopoweroff (on|off)
     uint8_t displayBatteryPercentage;
     uint8_t dummy_mode;
     uint8_t display_clock;
