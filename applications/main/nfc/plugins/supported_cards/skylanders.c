@@ -7,12 +7,35 @@
 #include <nfc/protocols/mf_classic/mf_classic_poller_sync.h>
 #include <flipper_format/flipper_format.h>
 
-#define TAG "Skylanders"
+#define TAG      "Skylanders"
+#define POLY     UINT64_C(0x42f0e1eba9ea3693)
+#define TOP      UINT64_C(0x800000000000)
+#define UID_LEN  4
+#define KEY_MASK 0xFFFFFFFFFFFF
 
 static const uint64_t skylanders_key = 0x4b0b20107ccb;
 
 static const char* nfc_resources_header = "Flipper NFC resources";
 static const uint32_t nfc_resources_file_version = 1;
+
+uint64_t crc64_like(uint64_t result, uint8_t sector) {
+    result ^= (uint64_t)sector << 40;
+    for(int i = 0; i < 8; i++) {
+        result = (result & TOP) ? (result << 1) ^ POLY : result << 1;
+    }
+    return result;
+}
+
+uint64_t taghash(uint32_t uid) {
+    uint64_t result = 0x9AE903260CC4;
+    uint8_t uidBytes[UID_LEN] = {0};
+    memcpy(uidBytes, &uid, UID_LEN);
+
+    for(int i = 0; i < UID_LEN; i++) {
+        result = crc64_like(result, uidBytes[i]);
+    }
+    return result;
+}
 
 static bool skylanders_search_data(
     Storage* storage,
@@ -88,6 +111,12 @@ static bool skylanders_read(Nfc* nfc, NfcDevice* device) {
     MfClassicData* data = mf_classic_alloc();
     nfc_device_copy_data(device, NfcProtocolMfClassic, data);
 
+    size_t* uid_len = 0;
+    const uint8_t* uid_bytes = mf_classic_get_uid(data, uid_len);
+    uint32_t uid = 0;
+    memcpy(&uid, uid_bytes, sizeof(uid));
+    uint64_t hash = taghash(uid);
+
     do {
         MfClassicType type = MfClassicType1k;
         MfClassicError error = mf_classic_poller_sync_detect_type(nfc, &type);
@@ -96,10 +125,18 @@ static bool skylanders_read(Nfc* nfc, NfcDevice* device) {
         data->type = type;
         MfClassicDeviceKeys keys = {};
         for(size_t i = 0; i < mf_classic_get_total_sectors_num(data->type); i++) {
-            bit_lib_num_to_bytes_be(skylanders_key, sizeof(MfClassicKey), keys.key_a[i].data);
-            FURI_BIT_SET(keys.key_a_mask, i);
-            bit_lib_num_to_bytes_be(skylanders_key, sizeof(MfClassicKey), keys.key_b[i].data);
-            FURI_BIT_SET(keys.key_b_mask, i);
+            if(i == 0) {
+                bit_lib_num_to_bytes_be(skylanders_key, sizeof(MfClassicKey), keys.key_a[i].data);
+                FURI_BIT_SET(keys.key_a_mask, i);
+            } else {
+                uint64_t sectorhash = crc64_like(hash, i);
+                uint64_t key = sectorhash & KEY_MASK;
+                uint8_t* keyBytes = (uint8_t*)&key;
+                memcpy(keys.key_a[i].data, keyBytes, sizeof(MfClassicKey));
+                FURI_BIT_SET(keys.key_a_mask, i);
+                memset(keys.key_b[i].data, 0, sizeof(MfClassicKey));
+                FURI_BIT_SET(keys.key_b_mask, i);
+            }
         }
 
         error = mf_classic_poller_sync_read(nfc, &keys, data);
@@ -134,7 +171,7 @@ static bool skylanders_parse(const NfcDevice* device, FuriString* parsed_data) {
         uint64_t key = bit_lib_bytes_to_num_be(sec_tr->key_a.data, 6);
         if(key != skylanders_key) break;
 
-        const uint16_t id = (uint16_t)*data->block[1].data;
+        const uint16_t id = data->block[1].data[1] << 8 | data->block[1].data[0];
         if(id == 0) break;
 
         Storage* storage = furi_record_open(RECORD_STORAGE);

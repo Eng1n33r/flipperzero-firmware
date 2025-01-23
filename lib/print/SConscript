@@ -44,18 +44,24 @@ wrapped_fn_list = [
     "vsiprintf",
     "vsniprintf",
     #
-    # Scanf is not implemented 4 now
+    # standard input
+    #
+    "fgetc",
+    "getc",
+    "getchar",
+    "fgets",
+    "ungetc",
+    #
+    # standard input, but unimplemented
+    #
+    "gets",
+    #
+    # scanf, not implemented for now
     #
     # "fscanf",
     # "scanf",
     # "sscanf",
     # "vsprintf",
-    # "fgetc",
-    # "fgets",
-    # "getc",
-    # "getchar",
-    # "gets",
-    # "ungetc",
     # "vfscanf",
     # "vscanf",
     # "vsscanf",

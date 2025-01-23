@@ -258,6 +258,41 @@ static void rpc_system_app_button_release(const PB_Main* request, void* context)
     }
 }
 
+static void rpc_system_app_button_press_release(const PB_Main* request, void* context) {
+    furi_assert(request);
+    furi_assert(request->which_content == PB_Main_app_button_press_release_request_tag);
+
+    RpcAppSystem* rpc_app = context;
+    furi_assert(rpc_app);
+
+    if(rpc_app->callback) {
+        FURI_LOG_D(TAG, "ButtonPressRelease");
+
+        RpcAppSystemEvent event;
+        event.type = RpcAppEventTypeButtonPressRelease;
+
+        if(strlen(request->content.app_button_press_release_request.args) != 0) {
+            event.data.type = RpcAppSystemEventDataTypeString;
+            event.data.string = request->content.app_button_press_release_request.args;
+        } else {
+            event.data.type = RpcAppSystemEventDataTypeInt32;
+            event.data.i32 = request->content.app_button_press_release_request.index;
+        }
+
+        rpc_system_app_error_reset(rpc_app);
+        rpc_system_app_set_last_command(rpc_app, request->command_id, &event);
+
+        rpc_app->callback(&event, rpc_app->callback_context);
+
+    } else {
+        rpc_system_app_send_error_response(
+            rpc_app,
+            request->command_id,
+            PB_CommandStatus_ERROR_APP_NOT_RUNNING,
+            "ButtonPressRelease");
+    }
+}
+
 static void rpc_system_app_get_error_process(const PB_Main* request, void* context) {
     furi_assert(request);
     furi_assert(request->which_content == PB_Main_app_get_error_request_tag);
@@ -332,6 +367,7 @@ void rpc_system_app_confirm(RpcAppSystem* rpc_app, bool result) {
         rpc_app->last_event_type == RpcAppEventTypeLoadFile ||
         rpc_app->last_event_type == RpcAppEventTypeButtonPress ||
         rpc_app->last_event_type == RpcAppEventTypeButtonRelease ||
+        rpc_app->last_event_type == RpcAppEventTypeButtonPressRelease ||
         rpc_app->last_event_type == RpcAppEventTypeDataExchange);
 
     const uint32_t last_command_id = rpc_app->last_command_id;
@@ -431,6 +467,9 @@ void* rpc_system_app_alloc(RpcSession* session) {
 
     rpc_handler.message_handler = rpc_system_app_button_release;
     rpc_add_handler(session, PB_Main_app_button_release_request_tag, &rpc_handler);
+
+    rpc_handler.message_handler = rpc_system_app_button_press_release;
+    rpc_add_handler(session, PB_Main_app_button_press_release_request_tag, &rpc_handler);
 
     rpc_handler.message_handler = rpc_system_app_get_error_process;
     rpc_add_handler(session, PB_Main_app_get_error_request_tag, &rpc_handler);

@@ -129,12 +129,12 @@ void furi_string_swap(FuriString* string_1, FuriString* string_2);
 
 /** Move string_2 content to string_1.
  *
- * Set the string to the other one, and destroy the other one.
+ * Copy data from one string to another and destroy the source.
  *
- * @param      string_1  The FuriString instance 1
- * @param      string_2  The FuriString instance 2
+ * @param      destination  The destination FuriString
+ * @param      source  The source FuriString
  */
-void furi_string_move(FuriString* string_1, FuriString* string_2);
+void furi_string_move(FuriString* destination, FuriString* source);
 
 /** Compute a hash for the string.
  *

@@ -125,6 +125,49 @@ bool infrared_scene_rpc_on_event(void* context, SceneManagerEvent event) {
             rpc_system_app_confirm(infrared->rpc_ctx, result);
 
         } else if(
+            event.event == InfraredCustomEventTypeRpcButtonPressReleaseName ||
+            event.event == InfraredCustomEventTypeRpcButtonPressReleaseIndex) {
+            bool result = false;
+
+            // Send the signal once and stop
+            if(rpc_state == InfraredRpcStateLoaded) {
+                if(event.event == InfraredCustomEventTypeRpcButtonPressReleaseName) {
+                    const char* button_name = furi_string_get_cstr(infrared->button_name);
+                    size_t index;
+                    const bool index_found =
+                        infrared_remote_get_signal_index(infrared->remote, button_name, &index);
+                    app_state->current_button_index = index_found ? (signed)index :
+                                                                    InfraredButtonIndexNone;
+                    FURI_LOG_D(TAG, "Sending signal with name \"%s\"", button_name);
+                } else {
+                    FURI_LOG_D(
+                        TAG, "Sending signal with index \"%ld\"", app_state->current_button_index);
+                }
+                if(infrared->app_state.current_button_index != InfraredButtonIndexNone) {
+                    InfraredErrorCode error = infrared_tx_send_once_button_index(
+                        infrared, app_state->current_button_index);
+                    if(!INFRARED_ERROR_PRESENT(error)) {
+                        const char* remote_name = infrared_remote_get_name(infrared->remote);
+                        infrared_text_store_set(infrared, 0, "emulating\n%s", remote_name);
+
+                        infrared_scene_rpc_show(infrared);
+                        result = true;
+                    } else {
+                        rpc_system_app_set_error_code(
+                            infrared->rpc_ctx, RpcAppSystemErrorCodeInternalParse);
+                        rpc_system_app_set_error_text(
+                            infrared->rpc_ctx, "Cannot load button data");
+                        result = false;
+                    }
+                }
+            }
+
+            if(result) {
+                scene_manager_set_scene_state(
+                    infrared->scene_manager, InfraredSceneRpc, InfraredRpcStateLoaded);
+            }
+            rpc_system_app_confirm(infrared->rpc_ctx, result);
+        } else if(
             event.event == InfraredCustomEventTypeRpcExit ||
             event.event == InfraredCustomEventTypeRpcSessionClose ||
             event.event == InfraredCustomEventTypePopupClosed) {

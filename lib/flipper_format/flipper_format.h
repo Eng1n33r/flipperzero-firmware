@@ -518,6 +518,14 @@ bool flipper_format_write_comment(FlipperFormat* flipper_format, FuriString* dat
  */
 bool flipper_format_write_comment_cstr(FlipperFormat* flipper_format, const char* data);
 
+/** Write empty line (Improves readability for human based parsing)
+ *
+ * @param      flipper_format  Pointer to a FlipperFormat instance
+ *
+ * @return     True on success
+ */
+bool flipper_format_write_empty_line(FlipperFormat* flipper_format);
+
 /** Removes the first matching key and its value. Sets the RW pointer to a
  * position of deleted data.
  *

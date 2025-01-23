@@ -21,6 +21,8 @@ enum InfraredCustomEventType {
     InfraredCustomEventTypeRpcButtonPressName,
     InfraredCustomEventTypeRpcButtonPressIndex,
     InfraredCustomEventTypeRpcButtonRelease,
+    InfraredCustomEventTypeRpcButtonPressReleaseName,
+    InfraredCustomEventTypeRpcButtonPressReleaseIndex,
     InfraredCustomEventTypeRpcSessionClose,
 
     InfraredCustomEventTypeGpioTxPinChanged,

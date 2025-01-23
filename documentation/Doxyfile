@@ -1040,6 +1040,7 @@ EXCLUDE                = $(DOXY_SRC_ROOT)/lib/mlib \
                          $(DOXY_SRC_ROOT)/applications/plugins/dap_link/lib/free-dap \
                          $(DOXY_SRC_ROOT)/applications/debug \
                          $(DOXY_SRC_ROOT)/applications/main \
+                         $(DOXY_SRC_ROOT)/applications/system/js_app/packages \
                          $(DOXY_SRC_ROOT)/applications/settings \
                          $(DOXY_SRC_ROOT)/lib/micro-ecc \
                          $(DOXY_SRC_ROOT)/lib/ReadMe.md \

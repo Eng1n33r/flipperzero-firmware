@@ -314,8 +314,8 @@ SubGhzProtocolStatus
             flipper_format, "Repeat", (uint32_t*)&instance->encoder.repeat, 1);
 
         if(!subghz_protocol_encoder_bin_raw_get_upload(instance)) {
-            break;
             res = SubGhzProtocolStatusErrorEncoderGetUpload;
+            break;
         }
         instance->encoder.is_running = true;
 

@@ -51,9 +51,52 @@ int __wrap_snprintf(char* str, size_t size, const char* format, ...) {
 }
 
 int __wrap_fflush(FILE* stream) {
-    UNUSED(stream);
-    furi_thread_stdout_flush();
+    if(stream == stdout) furi_thread_stdout_flush();
     return 0;
+}
+
+int __wrap_fgetc(FILE* stream) {
+    if(stream != stdin) return EOF;
+    char c;
+    if(furi_thread_stdin_read(&c, 1, FuriWaitForever) == 0) return EOF;
+    return c;
+}
+
+int __wrap_getc(FILE* stream) {
+    return __wrap_fgetc(stream);
+}
+
+int __wrap_getchar(void) {
+    return __wrap_fgetc(stdin);
+}
+
+char* __wrap_fgets(char* str, size_t n, FILE* stream) {
+    // leave space for the zero terminator
+    furi_check(n >= 1);
+    n--;
+
+    if(stream != stdin) {
+        *str = '\0';
+        return str;
+    }
+
+    // read characters
+    int c;
+    do {
+        c = __wrap_fgetc(stdin);
+        if(c > 0) *(str++) = c;
+    } while(c != EOF && c != '\n' && --n);
+
+    // place zero terminator
+    *str = '\0';
+    return str;
+}
+
+int __wrap_ungetc(int ch, FILE* stream) {
+    char c = ch;
+    if(stream != stdin) return EOF;
+    furi_thread_stdin_unread(&c, 1);
+    return ch;
 }
 
 __attribute__((__noreturn__)) void __wrap___assert(const char* file, int line, const char* e) {

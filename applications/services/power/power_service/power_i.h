@@ -36,6 +36,11 @@ struct Power {
     uint8_t displayBatteryPercentage;
     uint8_t battery_level;
     uint8_t power_off_timeout;
+    PowerSettings settings;
+    FuriTimer* auto_poweroff_timer;
+    bool app_running;
+    FuriPubSub* input_events_pubsub;
+    FuriPubSubSubscription* input_events_subscription;
 };
 
 typedef enum {
@@ -49,6 +54,9 @@ typedef enum {
     PowerMessageTypeGetInfo,
     PowerMessageTypeIsBatteryHealthy,
     PowerMessageTypeShowBatteryLowWarning,
+    PowerMessageTypeGetSettings,
+    PowerMessageTypeSetSettings,
+    PowerMessageTypeReloadSettings,
 } PowerMessageType;
 
 typedef struct {
@@ -57,6 +65,8 @@ typedef struct {
         PowerBootMode boot_mode;
         PowerInfo* power_info;
         bool* bool_param;
+        PowerSettings* settings;
+        const PowerSettings* csettings;
     };
     FuriApiLock lock;
 } PowerMessage;

@@ -122,7 +122,7 @@ static const struct CdcConfigDescriptorSingle cdc_cfg_desc_single = {
                     .bFunctionLength = sizeof(struct usb_cdc_acm_desc),
                     .bDescriptorType = USB_DTYPE_CS_INTERFACE,
                     .bDescriptorSubType = USB_DTYPE_CDC_ACM,
-                    .bmCapabilities = 0,
+                    .bmCapabilities = USB_CDC_CAP_BRK,
                 },
             .cdc_union =
                 {
@@ -235,7 +235,7 @@ static const struct CdcConfigDescriptorDual
                             .bFunctionLength = sizeof(struct usb_cdc_acm_desc),
                             .bDescriptorType = USB_DTYPE_CS_INTERFACE,
                             .bDescriptorSubType = USB_DTYPE_CDC_ACM,
-                            .bmCapabilities = 0,
+                            .bmCapabilities = USB_CDC_CAP_BRK,
                         },
                     .cdc_union =
                         {
@@ -330,7 +330,7 @@ static const struct CdcConfigDescriptorDual
                             .bFunctionLength = sizeof(struct usb_cdc_acm_desc),
                             .bDescriptorType = USB_DTYPE_CS_INTERFACE,
                             .bDescriptorSubType = USB_DTYPE_CDC_ACM,
-                            .bmCapabilities = 0,
+                            .bmCapabilities = USB_CDC_CAP_BRK,
                         },
                     .cdc_union =
                         {
@@ -679,6 +679,13 @@ static usbd_respond cdc_control(usbd_device* dev, usbd_ctlreq* req, usbd_rqc_cal
         case USB_CDC_GET_LINE_CODING:
             dev->status.data_ptr = &cdc_config[if_num];
             dev->status.data_count = sizeof(cdc_config[0]);
+            return usbd_ack;
+        case USB_CDC_SEND_BREAK:
+            if(callbacks[if_num] != NULL) {
+                if(callbacks[if_num]->break_callback != NULL) {
+                    callbacks[if_num]->break_callback(cb_ctx[if_num], req->wValue);
+                }
+            }
             return usbd_ack;
         default:
             return usbd_fail;

@@ -13,7 +13,7 @@
 extern "C" {
 #endif
 
-#define INFRARED_MAX_FREQUENCY 56000
+#define INFRARED_MAX_FREQUENCY 1000000
 #define INFRARED_MIN_FREQUENCY 10000
 
 typedef enum {

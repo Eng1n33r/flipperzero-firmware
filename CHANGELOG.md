@@ -1,119 +1,34 @@
 ## Main changes
-- Current API: 78.1
-- SubGHz:
-    - Frequency analyzer fixes and improvements:
-        - **Enforce int module** (like in OFW) usage due to lack of required hardware on external boards (PathIsolate (+rf switch for multiple paths)) and incorrect usage and/or understanding the purpose of frequency analyzer app by users, it should be used only to get frequency of the remote placed around 1-10cm around flipper's left corner
-        - **Fix possible GSM mobile towers signal interference** by limiting upper frequency to 920mhz max
-        - Fix buttons logic, **fix crash**
-    - Protocol improvements: 
-        - **Keeloq: Monarch full support, with add manually option** (thanks @ashphx !)
-        - **Princeton support for second button encoding type** (8bit)
-        - GangQi fix serial check and remove broken check from UI
-        - Hollarm add more button codes (thanks to @mishamyte for captures)
-    - Misc:
-        - Add extra settings to disable GPIO pins control used for external modules amplifiers and/or LEDs (in radio settings menu with debug ON)
-- NFC:
-    - Read Ultralight block by block (**fix password protected MFUL reading issue**) (by @mishamyte | PR #825 #826)
-    - **Update NDEF parser** (SLIX and MFC support) (by @luu176 and @jaylikesbunda and @Willy-JL)
-    - OFW PR 3822: **MIFARE Classic Key Recovery Improvements** (by @noproto)
-    - OFW PR 3930: NFC Emulation freeze fix (by @RebornedBrain)
-    - OFW: H World Hotel Chain Room Key Parser
-    - OFW: Parser for Tianjin Railway Transit
-    - New keys in system dict
-- Infrared: 
-    - **Add LEDs universal remote** (DB by @amec0e)
-    - Update universal remote assets (by @amec0e | PR #813 #816)
-- JS:
-    - OFW: JS modules & SDK -> **Breaking API change**
-    - **Backporting custom features** (read about most of the changes after other changes section) (by @xMasterX and @Willy-JL)
-    - Add i2c & SPI module (by @jamisonderek)
-* OFW: FuriHal, drivers: rework gauge initialization routine -> **Downgrade to older releases may break battery UI percent indicator, upgrade to this or newer version to restore**
-* OFW: heap: increased size -> **More free RAM!!**
-* OFW: New layout for BadUSB (es-LA)
-* OFW: Require PIN on boot
+- Current API: 79.3
+* SubGHz: Jolly Motors support (with add manually) (Thanks @pkooiman !)
+* Power: Auto Power Off Timer (by @Dmitry422 with some fixes by @xMasterX)
+* OFW: **Fix lost BadBLE keystrokes**
+* OFW: **Add the ability to send a signal once via RPC**
+* OFW PR 4070: Infrared: increase max carrier limit (by @skotopes)
+* OFW PR 4025: Increase system stack's reserved memory size (Fix USB UART Bridge Crash) (by @Astrrra)
+* OFW: merged gsurkov/vcp_break_support branch for usb uart bridge (WIP!!!)
 * Apps: **Check out more Apps updates and fixes by following** [this link](https://github.com/xMasterX/all-the-plugins/commits/dev)
 ## Other changes
-* SubGHz: Freq analyzer - Fix duplicated frequency lists and use user config for nearest frequency selector too
-* SubGHz: Code cleanup and fix for rare dupicated (Data) field cases
-* OFW: NFC TRT Parser: Additional checks to prevent false positives
-* OFW PR 3992: Loader: Fix BusFault in handling of OOM (by @Willy-JL)
-* OFW PR 3885: NFC: Add API to enforce ISO15693 mode (by @aaronjamt)
-* OFW: NFC: iso14443_4a improvements (by @RebornedBrain)
-* OFW: NFC: Plantain parser improvements (by @assasinfil) & fixes (by @mxcdoam)
-* OFW: NFC: Moscow social card parser (by @assasinfil)
-* OFW: fix: npm deps
-* OFW: 目覚め時計 (Added alarm option and clock settings)
-* OFW: JS: Backport and more additions & fixes 
-* OFW: nfc: add Caltrain zones for Clipper
-* OFW: Update unit tests docs
-* OFW: Fix JS memory corruption (in gpio module)
-* OFW: Full-fledged JS SDK + npm packages 
-* OFW: FurEventLoop: add support for FuriEventFlag, simplify API
-* OFW: lib: digital_signal: digital_sequence: add furi_hal.h wrapped in ifdefs
-* OFW: Add warning about stealth mode in vibro CLI
-* OFW: Small fixes in the wifi devboard docs
-* OFW: BadUSB - Improve ChromeOS and GNOME demo scripts
-* OFW: Small JS fixes
-* OFW: Canvas: extended icon draw.
-* OFW: Fixes Mouse Clicker Should have a "0" value setting for "as fast as possible"
-* OFW: Wi-Fi Devboard documentation rework
-* OFW: Furi: A Lot of Fixes
-* OFW PR 3933: furi_hal_random: Wait for ready state and no errors before sampling (by @n1kolasM)
-* OFW: nfc/clipper: Update BART station codes 
-* OFW: FuriThread: Improve state callbacks
-* OFW: Documentation: update and cleanup
-* OFW: Improve bit_buffer.h docs
-* OFW: Prevent idle priority threads from potentially starving the FreeRTOS idle task
-* OFW: IR universal remote additions
-* OFW: Fix EM4100 T5577 writing block order (was already done in UL)
-* OFW: kerel typo
-* OFW: Folder rename fails
-* OFW: Put errno into TCB
-* OFW: Fix USB-UART bridge exit screen stopping the bridge prematurely
-**More details on JS changes** (js changelog written by @Willy-JL , thanks!):
-- Our custom JS SDK can be found on npm now: https://www.npmjs.com/org/darkflippers
-- Non-exhaustive list of changes to help you fix your scripts:
-    - `badusb`:
-      - `setup()`: `mfr_name`, `prod_name`, `layout_path` parameters renamed to `mfrName`, `prodName`, `layoutPath`
-      - effort required to update old scripts using badusb: very minimal
-    - `dialog`:
-      - removed, now replaced by `gui/dialog` and `gui/file_picker` (see below)
-    - `event_loop`:
-      - new module, allows timer functionality, callbacks and event-driven programming, used heavily alongside gpio and gui modules
-    - `gpio`:
-      - fully overhauled, now you `get()` pin instances and perform actions on them like `.init()`
-      - now supports interrupts, callbacks and more cool things
-      - effort required to update old scripts using gpio: moderate
-    - `gui`:
-      - new module, fully overhauled, replaces dialog, keyboard, submenu, textbox modules
-      - higher barrier to entry than older modules (requires usage of `event_loop` and `gui.viewDispatcher`), but much more flexible, powerful and easier to extend
-      - includes all previously available js gui functionality (except `widget`), and also adds `gui/loading` and `gui/empty_screen` views
-      - currently `gui/file_picker` works different than other new view objects, it is a simple `.pickFile()` synchronous function, but this [may change later](https://github.com/flipperdevices/flipperzero-firmware/pull/3961#discussion_r1805579153)
-      - effort required to update old scripts using gui: extensive
-    - `keyboard`:
-      - removed, now replaced by `gui/text_input` and `gui/byte_input` (see above)
-    - `math`:
-      - `is_equal()` renamed to `isEqual()`
-    - `storage`:
-      - fully overhauled, now you `openFile()`s and perform actions on them like `.read()`
-      - now supports many more operations including different open modes, directories and much more
-      - effort required to update old scripts using storage: moderate
-    - `submenu`:
-      - removed, now replaced by `gui/submenu` (see above)
-    - `textbox`:
-      - removed, now replace by `gui/text_box` (see above)
-    - `widget`:
-      - only gui functionality not ported to new gui module, remains unchanged for now but likely to be ported later on
-    - globals:
-      - `__filepath` and `__dirpath` renamed to `__filename` and `__dirname` like in nodejs
-      - `to_string()` renamed and moved to number class as `n.toString()`, now supports optional base parameter
-      - `to_hex_string()` removed, now use `n.toString(16)`
-      - `parse_int()` renamed to `parseInt()`, now supports optional base parameter
-      - `to_upper_case()` and `to_lower_case()` renamed and moved to string class as `s.toUpperCase()` and `s.toLowerCase()`
-      - effort required to update old scripts using these: minimal
-  - Added type definitions (typescript files for type checking in IDE, Flipper does not run typescript)
-  - Documentation is incomplete and deprecated, from now on you should refer to type definitions (`applications/system/js_app/types`), those will always be correct
-  - Type definitions for extra modules we have that OFW doesn't will come later
+* Power & Desktop: Add input events sub check & use event system for auto power off
+* OFW: Rename FuriHalDebuging.md to FuriHalDebugging.md
+* OFW: nfc: Fix MIFARE Plus detection
+* OFW: u2f: Fix leaking message digest contexts
+* OFW: nfc: Fix MFUL PWD_AUTH command creation
+* OFW: Bump cross-spawn in /applications/system/js_app/packages/create-fz-app
+* OFW: **Pipe** (new api funcs)
+* OFW: Fix invalid path errors while deploying SDK by enforcing toolchain to use UTF-8 on initial SDK Extraction
+* OFW: **Added flipper_format_write_empty_line(...)**
+* OFW: Fix skylander ID reading
+* OFW: Work around incorrect serial port handling by the OS
+* OFW: Add winter animations 
+* OFW: FBT: Don't lint JS packages
+* OFW: **Loader: Fix BusFault in handling of OOM** (was already included in previous UL release)
+* OFW: **NFC Fix ISO15693 stucking in wrong mode.**
+* OFW: Update `infrared_test.c` reference
+* OFW: **FuriThread stdin**
+* OFW: NFC: Plantain parser Last payment amount fix 
+* OFW: NFC clipper: BART station ids for San Lorenzo, Bay Fair
+* OFW: Fix typo for mf_classic_key_cahce_get_next_key() function
 <br><br>
 #### Known NFC post-refactor regressions list: 
 - Mifare Mini clones reading is broken (original mini working fine) (OFW)

@@ -91,9 +91,21 @@ async function build(config) {
 
 async function upload(config) {
     const appFile = fs.readFileSync(config.input, "utf8");
-    const flippers = (await SerialPort.list()).filter(x => x.serialNumber?.startsWith("flip_"));
+    const serialPorts = await SerialPort.list();
 
-    if (!flippers) {
+    let flippers = serialPorts
+        .filter(x => x.serialNumber?.startsWith("flip_"))
+        .map(x => ({ path: x.path, name: x.serialNumber.replace("flip_", "") }));
+
+    if (!flippers.length) {
+        // some Windows installations don't report the serial number correctly;
+        // filter by STM VCP VID:PID instead
+        flippers = serialPorts
+            .filter(x => x?.vendorId === "0483" && x?.productId === "5740")
+            .map(x => ({ path: x.path, name: x.path }));
+    }
+
+    if (!flippers.length) {
         console.error("No Flippers found");
         process.exit(1);
     }

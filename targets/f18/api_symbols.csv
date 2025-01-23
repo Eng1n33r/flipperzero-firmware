@@ -1,5 +1,5 @@
 entry,status,name,type,params
-Version,+,78.1,,
+Version,+,79.2,,
 Header,+,applications/services/bt/bt_service/bt.h,,
 Header,+,applications/services/bt/bt_service/bt_keys_storage.h,,
 Header,+,applications/services/cli/cli.h,,
@@ -161,6 +161,7 @@ Header,+,lib/toolbox/manchester_encoder.h,,
 Header,+,lib/toolbox/md5_calc.h,,
 Header,+,lib/toolbox/name_generator.h,,
 Header,+,lib/toolbox/path.h,,
+Header,+,lib/toolbox/pipe.h,,
 Header,+,lib/toolbox/pretty_format.h,,
 Header,+,lib/toolbox/protocols/protocol_dict.h,,
 Header,+,lib/toolbox/pulse_protocols/pulse_glue.h,,
@@ -371,11 +372,16 @@ Function,-,__utoa,char*,"unsigned, char*, int"
 Function,+,__wrap___assert,void,"const char*, int, const char*"
 Function,+,__wrap___assert_func,void,"const char*, int, const char*, const char*"
 Function,+,__wrap_fflush,int,FILE*
+Function,+,__wrap_fgetc,int,FILE*
+Function,+,__wrap_fgets,char*,"char*, size_t, FILE*"
+Function,+,__wrap_getc,int,FILE*
+Function,+,__wrap_getchar,int,
 Function,+,__wrap_printf,int,"const char*, ..."
 Function,+,__wrap_putc,int,"int, FILE*"
 Function,+,__wrap_putchar,int,int
 Function,+,__wrap_puts,int,const char*
 Function,+,__wrap_snprintf,int,"char*, size_t, const char*, ..."
+Function,+,__wrap_ungetc,int,"int, FILE*"
 Function,+,__wrap_vsnprintf,int,"char*, size_t, const char*, va_list"
 Function,-,_asiprintf_r,int,"_reent*, char**, const char*, ..."
 Function,-,_asniprintf_r,char*,"_reent*, char*, size_t*, const char*, ..."
@@ -1049,6 +1055,7 @@ Function,+,flipper_format_update_uint32,_Bool,"FlipperFormat*, const char*, cons
 Function,+,flipper_format_write_bool,_Bool,"FlipperFormat*, const char*, const _Bool*, const uint16_t"
 Function,+,flipper_format_write_comment,_Bool,"FlipperFormat*, FuriString*"
 Function,+,flipper_format_write_comment_cstr,_Bool,"FlipperFormat*, const char*"
+Function,+,flipper_format_write_empty_line,_Bool,FlipperFormat*
 Function,+,flipper_format_write_float,_Bool,"FlipperFormat*, const char*, const float*, const uint16_t"
 Function,+,flipper_format_write_header,_Bool,"FlipperFormat*, FuriString*, const uint32_t"
 Function,+,flipper_format_write_header_cstr,_Bool,"FlipperFormat*, const char*, const uint32_t"
@@ -1446,6 +1453,7 @@ Function,+,furi_hal_serial_get_gpio_pin,const GpioPin*,"FuriHalSerialHandle*, Fu
 Function,+,furi_hal_serial_init,void,"FuriHalSerialHandle*, uint32_t"
 Function,+,furi_hal_serial_is_baud_rate_supported,_Bool,"FuriHalSerialHandle*, uint32_t"
 Function,+,furi_hal_serial_resume,void,FuriHalSerialHandle*
+Function,+,furi_hal_serial_send_break,void,FuriHalSerialHandle*
 Function,+,furi_hal_serial_set_br,void,"FuriHalSerialHandle*, uint32_t"
 Function,+,furi_hal_serial_suspend,void,FuriHalSerialHandle*
 Function,+,furi_hal_serial_tx,void,"FuriHalSerialHandle*, const uint8_t*, size_t"
@@ -1574,6 +1582,7 @@ Function,+,furi_stream_buffer_receive,size_t,"FuriStreamBuffer*, void*, size_t, 
 Function,+,furi_stream_buffer_reset,FuriStatus,FuriStreamBuffer*
 Function,+,furi_stream_buffer_send,size_t,"FuriStreamBuffer*, const void*, size_t, uint32_t"
 Function,+,furi_stream_buffer_spaces_available,size_t,FuriStreamBuffer*
+Function,+,furi_stream_get_trigger_level,size_t,FuriStreamBuffer*
 Function,+,furi_stream_set_trigger_level,_Bool,"FuriStreamBuffer*, size_t"
 Function,+,furi_string_alloc,FuriString*,
 Function,+,furi_string_alloc_move,FuriString*,FuriString*
@@ -1654,6 +1663,7 @@ Function,+,furi_thread_get_return_code,int32_t,FuriThread*
 Function,+,furi_thread_get_signal_callback,FuriThreadSignalCallback,const FuriThread*
 Function,+,furi_thread_get_stack_space,uint32_t,FuriThreadId
 Function,+,furi_thread_get_state,FuriThreadState,FuriThread*
+Function,+,furi_thread_get_stdin_callback,FuriThreadStdinReadCallback,
 Function,+,furi_thread_get_stdout_callback,FuriThreadStdoutWriteCallback,
 Function,+,furi_thread_is_suspended,_Bool,FuriThreadId
 Function,+,furi_thread_join,_Bool,FuriThread*
@@ -1674,9 +1684,12 @@ Function,+,furi_thread_set_signal_callback,void,"FuriThread*, FuriThreadSignalCa
 Function,+,furi_thread_set_stack_size,void,"FuriThread*, size_t"
 Function,+,furi_thread_set_state_callback,void,"FuriThread*, FuriThreadStateCallback"
 Function,+,furi_thread_set_state_context,void,"FuriThread*, void*"
-Function,+,furi_thread_set_stdout_callback,void,FuriThreadStdoutWriteCallback
+Function,+,furi_thread_set_stdin_callback,void,"FuriThreadStdinReadCallback, void*"
+Function,+,furi_thread_set_stdout_callback,void,"FuriThreadStdoutWriteCallback, void*"
 Function,+,furi_thread_signal,_Bool,"const FuriThread*, uint32_t, void*"
 Function,+,furi_thread_start,void,FuriThread*
+Function,+,furi_thread_stdin_read,size_t,"char*, size_t, FuriWait"
+Function,+,furi_thread_stdin_unread,void,"char*, size_t"
 Function,+,furi_thread_stdout_flush,int32_t,
 Function,+,furi_thread_stdout_write,size_t,"const char*, size_t"
 Function,+,furi_thread_suspend,void,FuriThreadId
@@ -2280,6 +2293,22 @@ Function,+,pb_skip_field,_Bool,"pb_istream_t*, pb_wire_type_t"
 Function,+,pb_write,_Bool,"pb_ostream_t*, const pb_byte_t*, size_t"
 Function,-,pclose,int,FILE*
 Function,-,perror,void,const char*
+Function,+,pipe_alloc,PipeSideBundle,"size_t, size_t"
+Function,+,pipe_alloc_ex,PipeSideBundle,"PipeSideReceiveSettings, PipeSideReceiveSettings"
+Function,+,pipe_attach_to_event_loop,void,"PipeSide*, FuriEventLoop*"
+Function,+,pipe_bytes_available,size_t,PipeSide*
+Function,+,pipe_detach_from_event_loop,void,PipeSide*
+Function,+,pipe_free,void,PipeSide*
+Function,+,pipe_install_as_stdio,void,PipeSide*
+Function,+,pipe_receive,size_t,"PipeSide*, void*, size_t, FuriWait"
+Function,+,pipe_role,PipeRole,PipeSide*
+Function,+,pipe_send,size_t,"PipeSide*, const void*, size_t, FuriWait"
+Function,+,pipe_set_callback_context,void,"PipeSide*, void*"
+Function,+,pipe_set_data_arrived_callback,void,"PipeSide*, PipeSideDataArrivedCallback, FuriEventLoopEvent"
+Function,+,pipe_set_broken_callback,void,"PipeSide*, PipeSideBrokenCallback, FuriEventLoopEvent"
+Function,+,pipe_set_space_freed_callback,void,"PipeSide*, PipeSideSpaceFreedCallback, FuriEventLoopEvent"
+Function,+,pipe_spaces_available,size_t,PipeSide*
+Function,+,pipe_state,PipeState,PipeSide*
 Function,+,plugin_manager_alloc,PluginManager*,"const char*, uint32_t, const ElfApiInterface*"
 Function,+,plugin_manager_free,void,PluginManager*
 Function,+,plugin_manager_get,const FlipperAppPluginDescriptor*,"PluginManager*, uint32_t"

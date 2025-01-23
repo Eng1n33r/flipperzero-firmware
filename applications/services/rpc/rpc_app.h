@@ -91,6 +91,13 @@ typedef enum {
      */
     RpcAppEventTypeButtonRelease,
     /**
+     * @brief The client has informed the application that a button has been pressed and released.
+     * 
+     * This command's meaning is application-specific, e.g. to perform an action
+     * once without repeating it.
+     */
+    RpcAppEventTypeButtonPressRelease,
+    /**
      * @brief The client has sent a byte array of arbitrary size.
      *
      * This command's purpose is bi-directional exchange of arbitrary raw data.
@@ -162,6 +169,7 @@ void rpc_system_app_send_exited(RpcAppSystem* rpc_app);
  * - RpcAppEventTypeLoadFile
  * - RpcAppEventTypeButtonPress
  * - RpcAppEventTypeButtonRelease
+ * - RpcAppEventTypeButtonPressRelease
  * - RpcAppEventTypeDataExchange
  *
  * Not confirming these events will result in a client-side timeout.

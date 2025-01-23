@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
-
 import re
-import sys
 import time
+from datetime import datetime
 from typing import Optional
 
 from flipper.app import App
@@ -11,7 +10,10 @@ from flipper.utils.cdc import resolve_port
 
 
 class Main(App):
-    # this is basic use without sub-commands, simply to reboot flipper / power it off, not meant as a full CLI wrapper
+    def __init__(self, no_exit=False):
+        super().__init__(no_exit)
+        self.test_results = None
+
     def init(self):
         self.parser.add_argument("-p", "--port", help="CDC Port", default="auto")
         self.parser.add_argument(
@@ -67,64 +69,108 @@ class Main(App):
         self.logger.info("Running unit tests")
         flipper.send("unit_tests" + "\r")
         self.logger.info("Waiting for unit tests to complete")
-        data = flipper.read.until(">: ")
-        self.logger.info("Parsing result")
-
-        lines = data.decode().split("\r\n")
-
-        tests_re = r"Failed tests: \d{0,}"
-        time_re = r"Consumed: \d{0,}"
-        leak_re = r"Leaked: \d{0,}"
-        status_re = r"Status: \w{3,}"
-
-        tests_pattern = re.compile(tests_re)
-        time_pattern = re.compile(time_re)
-        leak_pattern = re.compile(leak_re)
-        status_pattern = re.compile(status_re)
 
         tests, elapsed_time, leak, status = None, None, None, None
         total = 0
+        all_required_found = False
 
-        for line in lines:
-            self.logger.info(line)
-            if "()" in line:
-                total += 1
+        full_output = []
 
-            if not tests:
-                tests = re.match(tests_pattern, line)
-            if not elapsed_time:
-                elapsed_time = re.match(time_pattern, line)
-            if not leak:
-                leak = re.match(leak_pattern, line)
-            if not status:
-                status = re.match(status_pattern, line)
+        tests_pattern = re.compile(r"Failed tests: \d{0,}")
+        time_pattern = re.compile(r"Consumed: \d{0,}")
+        leak_pattern = re.compile(r"Leaked: \d{0,}")
+        status_pattern = re.compile(r"Status: \w{3,}")
 
-        if None in (tests, elapsed_time, leak, status):
-            self.logger.error(
-                f"Failed to parse output: {tests} {elapsed_time} {leak} {status}"
+        try:
+            while not all_required_found:
+                try:
+                    line = flipper.read.until("\r\n", cut_eol=True).decode()
+                    self.logger.info(line)
+                    if "command not found," in line:
+                        self.logger.error(f"Command not found: {line}")
+                        return 1
+
+                    if "()" in line:
+                        total += 1
+                        self.logger.debug(f"Test completed: {line}")
+
+                    if not tests:
+                        tests = tests_pattern.match(line)
+                    if not elapsed_time:
+                        elapsed_time = time_pattern.match(line)
+                    if not leak:
+                        leak = leak_pattern.match(line)
+                    if not status:
+                        status = status_pattern.match(line)
+
+                    pattern = re.compile(
+                        r"(\[-]|\[\\]|\[\|]|\[/-]|\[[^\]]*\]|\x1b\[\d+D)"
+                    )
+                    line_to_append = pattern.sub("", line)
+                    pattern = re.compile(r"\[3D[^\]]*")
+                    line_to_append = pattern.sub("", line_to_append)
+                    line_to_append = f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S,%f')} {line_to_append}"
+
+                    full_output.append(line_to_append)
+
+                    if tests and elapsed_time and leak and status:
+                        all_required_found = True
+                        try:
+                            remaining = flipper.read.until(">: ", cut_eol=True).decode()
+                            if remaining.strip():
+                                full_output.append(remaining)
+                        except:
+                            pass
+                        break
+
+                except Exception as e:
+                    self.logger.error(f"Error reading output: {e}")
+                    raise
+
+            if None in (tests, elapsed_time, leak, status):
+                raise RuntimeError(
+                    f"Failed to parse output: {tests} {elapsed_time} {leak} {status}"
+                )
+
+            leak = int(re.findall(r"[- ]\d+", leak.group(0))[0])
+            status = re.findall(r"\w+", status.group(0))[1]
+            tests = int(re.findall(r"\d+", tests.group(0))[0])
+            elapsed_time = int(re.findall(r"\d+", elapsed_time.group(0))[0])
+
+            test_results = {
+                "full_output": "\n".join(full_output),
+                "total_tests": total,
+                "failed_tests": tests,
+                "elapsed_time_ms": elapsed_time,
+                "memory_leak_bytes": leak,
+                "status": status,
+            }
+
+            self.test_results = test_results
+
+            output_file = "unit_tests_output.txt"
+            with open(output_file, "w") as f:
+                f.write(test_results["full_output"])
+
+            print(
+                f"::notice:: Total tests: {total} Failed tests: {tests} Status: {status} Elapsed time: {elapsed_time / 1000} s Memory leak: {leak} bytes"
             )
-            sys.exit(1)
 
-        leak = int(re.findall(r"[- ]\d+", leak.group(0))[0])
-        status = re.findall(r"\w+", status.group(0))[1]
-        tests = int(re.findall(r"\d+", tests.group(0))[0])
-        elapsed_time = int(re.findall(r"\d+", elapsed_time.group(0))[0])
+            if tests > 0 or status != "PASSED":
+                self.logger.error(f"Got {tests} failed tests.")
+                self.logger.error(f"Leaked (not failing on this stat): {leak}")
+                self.logger.error(f"Status: {status}")
+                self.logger.error(f"Time: {elapsed_time / 1000} seconds")
+                return 1
 
-        if tests > 0 or status != "PASSED":
-            self.logger.error(f"Got {tests} failed tests.")
-            self.logger.error(f"Leaked (not failing on this stat): {leak}")
-            self.logger.error(f"Status: {status}")
-            self.logger.error(f"Time: {elapsed_time/1000} seconds")
+            self.logger.info(f"Leaked (not failing on this stat): {leak}")
+            self.logger.info(
+                f"Tests ran successfully! Time elapsed {elapsed_time / 1000} seconds. Passed {total} tests."
+            )
+            return 0
+
+        finally:
             flipper.stop()
-            return 1
-
-        self.logger.info(f"Leaked (not failing on this stat): {leak}")
-        self.logger.info(
-            f"Tests ran successfully! Time elapsed {elapsed_time/1000} seconds. Passed {total} tests."
-        )
-
-        flipper.stop()
-        return 0
 
 
 if __name__ == "__main__":

@@ -46,9 +46,17 @@ PowerSettingsApp* power_settings_app_alloc(uint32_t first_scene) {
     app->submenu = submenu_alloc();
     view_dispatcher_add_view(
         app->view_dispatcher, PowerSettingsAppViewSubmenu, submenu_get_view(app->submenu));
+    app->variable_item_list = variable_item_list_alloc();
+    view_dispatcher_add_view(
+        app->view_dispatcher,
+        PowerSettingsAppViewVariableItemList,
+        variable_item_list_get_view(app->variable_item_list));
     app->dialog = dialog_ex_alloc();
     view_dispatcher_add_view(
         app->view_dispatcher, PowerSettingsAppViewDialog, dialog_ex_get_view(app->dialog));
+
+    // get settings from service to app
+    power_api_get_settings(app->power, &app->settings);
 
     // Set first scene
     scene_manager_next_scene(app->scene_manager, first_scene);
@@ -57,16 +65,23 @@ PowerSettingsApp* power_settings_app_alloc(uint32_t first_scene) {
 
 void power_settings_app_free(PowerSettingsApp* app) {
     furi_assert(app);
+
+    // set settings from app to service
+    power_api_set_settings(app->power, &app->settings);
     // Views
     view_dispatcher_remove_view(app->view_dispatcher, PowerSettingsAppViewBatteryInfo);
     battery_info_free(app->battery_info);
     view_dispatcher_remove_view(app->view_dispatcher, PowerSettingsAppViewSubmenu);
     submenu_free(app->submenu);
+    view_dispatcher_remove_view(app->view_dispatcher, PowerSettingsAppViewVariableItemList);
+    variable_item_list_free(app->variable_item_list);
     view_dispatcher_remove_view(app->view_dispatcher, PowerSettingsAppViewDialog);
     dialog_ex_free(app->dialog);
+
     // View dispatcher
     view_dispatcher_free(app->view_dispatcher);
     scene_manager_free(app->scene_manager);
+
     // Records
     furi_record_close(RECORD_POWER);
     furi_record_close(RECORD_GUI);

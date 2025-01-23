@@ -239,6 +239,12 @@ void furi_hal_serial_dma_rx_stop(FuriHalSerialHandle* handle);
  */
 size_t furi_hal_serial_dma_rx(FuriHalSerialHandle* handle, uint8_t* data, size_t len);
 
+/** Send a break sequence (low level for the whole character duration)
+ *
+ * @param      handle  Serial handle
+ */
+void furi_hal_serial_send_break(FuriHalSerialHandle* handle);
+
 #ifdef __cplusplus
 }
 #endif

@@ -7,6 +7,12 @@
 
 #define GATT_MIN_READ_KEY_SIZE (10)
 
+#ifdef BLE_GATT_STRICT
+#define ble_gatt_strict_crash(message) furi_crash(message)
+#else
+#define ble_gatt_strict_crash(message)
+#endif
+
 void ble_gatt_characteristic_init(
     uint16_t svc_handle,
     const BleGattCharacteristicParams* char_descriptor,
@@ -42,6 +48,7 @@ void ble_gatt_characteristic_init(
         &char_instance->handle);
     if(status) {
         FURI_LOG_E(TAG, "Failed to add %s char: %d", char_descriptor->name, status);
+        ble_gatt_strict_crash("Failed to add characteristic");
     }
 
     char_instance->descriptor_handle = 0;
@@ -68,6 +75,7 @@ void ble_gatt_characteristic_init(
             &char_instance->descriptor_handle);
         if(status) {
             FURI_LOG_E(TAG, "Failed to add %s char descriptor: %d", char_descriptor->name, status);
+            ble_gatt_strict_crash("Failed to add characteristic descriptor");
         }
         if(release_data) {
             free((void*)char_data);
@@ -82,6 +90,7 @@ void ble_gatt_characteristic_delete(
     if(status) {
         FURI_LOG_E(
             TAG, "Failed to delete %s char: %d", char_instance->characteristic->name, status);
+        ble_gatt_strict_crash("Failed to delete characteristic");
     }
     free((void*)char_instance->characteristic);
 }
@@ -111,14 +120,27 @@ bool ble_gatt_characteristic_update(
         release_data = char_descriptor->data.callback.fn(context, &char_data, &char_data_size);
     }
 
-    tBleStatus result = aci_gatt_update_char_value(
-        svc_handle, char_instance->handle, 0, char_data_size, char_data);
-    if(result) {
-        FURI_LOG_E(TAG, "Failed updating %s characteristic: %d", char_descriptor->name, result);
-    }
+    tBleStatus result;
+    size_t retries_left = 1000;
+    do {
+        retries_left--;
+        result = aci_gatt_update_char_value(
+            svc_handle, char_instance->handle, 0, char_data_size, char_data);
+        if(result == BLE_STATUS_INSUFFICIENT_RESOURCES) {
+            FURI_LOG_W(TAG, "Insufficient resources for %s characteristic", char_descriptor->name);
+            furi_delay_ms(1);
+        }
+    } while(result == BLE_STATUS_INSUFFICIENT_RESOURCES && retries_left);
+
     if(release_data) {
         free((void*)char_data);
     }
+
+    if(result != BLE_STATUS_SUCCESS) {
+        FURI_LOG_E(TAG, "Failed updating %s characteristic: %d", char_descriptor->name, result);
+        ble_gatt_strict_crash("Failed to update characteristic");
+    }
+
     return result != BLE_STATUS_SUCCESS;
 }
 
@@ -132,6 +154,7 @@ bool ble_gatt_service_add(
         Service_UUID_Type, Service_UUID, Service_Type, Max_Attribute_Records, Service_Handle);
     if(result) {
         FURI_LOG_E(TAG, "Failed to add service: %x", result);
+        ble_gatt_strict_crash("Failed to add service");
     }
 
     return result == BLE_STATUS_SUCCESS;
@@ -141,6 +164,7 @@ bool ble_gatt_service_delete(uint16_t svc_handle) {
     tBleStatus result = aci_gatt_del_service(svc_handle);
     if(result) {
         FURI_LOG_E(TAG, "Failed to delete service: %x", result);
+        ble_gatt_strict_crash("Failed to delete service");
     }
 
     return result == BLE_STATUS_SUCCESS;

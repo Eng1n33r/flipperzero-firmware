@@ -87,6 +87,43 @@ bool subghz_scene_rpc_on_event(void* context, SceneManagerEvent event) {
             scene_manager_set_scene_state(
                 subghz->scene_manager, SubGhzSceneRpc, SubGhzRpcStateIdle);
             rpc_system_app_confirm(subghz->rpc_ctx, result);
+        } else if(event.event == SubGhzCustomEventSceneRpcButtonPressRelease) {
+            bool result = false;
+            if(state == SubGhzRpcStateLoaded) {
+                switch(
+                    subghz_txrx_tx_start(subghz->txrx, subghz_txrx_get_fff_data(subghz->txrx))) {
+                case SubGhzTxRxStartTxStateErrorOnlyRx:
+                    rpc_system_app_set_error_code(
+                        subghz->rpc_ctx, RpcAppSystemErrorCodeRegionLock);
+                    rpc_system_app_set_error_text(
+                        subghz->rpc_ctx,
+                        "Transmission on this frequency is restricted in your region");
+                    break;
+                case SubGhzTxRxStartTxStateErrorParserOthers:
+                    rpc_system_app_set_error_code(
+                        subghz->rpc_ctx, RpcAppSystemErrorCodeInternalParse);
+                    rpc_system_app_set_error_text(
+                        subghz->rpc_ctx, "Error in protocol parameters description");
+                    break;
+
+                default: //if(SubGhzTxRxStartTxStateOk)
+                    result = true;
+                    subghz_blink_start(subghz);
+                    scene_manager_set_scene_state(
+                        subghz->scene_manager, SubGhzSceneRpc, SubGhzRpcStateTx);
+                    break;
+                }
+            }
+
+            // Stop transmission
+            if(state == SubGhzRpcStateTx) {
+                subghz_txrx_stop(subghz->txrx);
+                subghz_blink_stop(subghz);
+                result = true;
+            }
+            scene_manager_set_scene_state(
+                subghz->scene_manager, SubGhzSceneRpc, SubGhzRpcStateIdle);
+            rpc_system_app_confirm(subghz->rpc_ctx, result);
         } else if(event.event == SubGhzCustomEventSceneRpcLoad) {
             bool result = false;
             if(state == SubGhzRpcStateIdle) {

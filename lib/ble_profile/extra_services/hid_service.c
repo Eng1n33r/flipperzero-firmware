@@ -10,13 +10,13 @@
 #define TAG "BleHid"
 
 #define BLE_SVC_HID_REPORT_MAP_MAX_LEN (255)
-#define BLE_SVC_HID_REPORT_MAX_LEN (255)
-#define BLE_SVC_HID_REPORT_REF_LEN (2)
-#define BLE_SVC_HID_INFO_LEN (4)
-#define BLE_SVC_HID_CONTROL_POINT_LEN (1)
+#define BLE_SVC_HID_REPORT_MAX_LEN     (255)
+#define BLE_SVC_HID_REPORT_REF_LEN     (2)
+#define BLE_SVC_HID_INFO_LEN           (4)
+#define BLE_SVC_HID_CONTROL_POINT_LEN  (1)
 
-#define BLE_SVC_HID_INPUT_REPORT_COUNT (3)
-#define BLE_SVC_HID_OUTPUT_REPORT_COUNT (0)
+#define BLE_SVC_HID_INPUT_REPORT_COUNT   (3)
+#define BLE_SVC_HID_OUTPUT_REPORT_COUNT  (0)
 #define BLE_SVC_HID_FEATURE_REPORT_COUNT (0)
 #define BLE_SVC_HID_REPORT_COUNT                                        \
     (BLE_SVC_HID_INPUT_REPORT_COUNT + BLE_SVC_HID_OUTPUT_REPORT_COUNT + \
@@ -157,6 +157,7 @@ static BleEventAckStatus ble_svc_hid_event_handler(void* event, void* context) {
     hci_event_pckt* event_pckt = (hci_event_pckt*)(((hci_uart_pckt*)event)->data);
     evt_blecore_aci* blecore_evt = (evt_blecore_aci*)event_pckt->data;
     // aci_gatt_attribute_modified_event_rp0* attribute_modified;
+
     if(event_pckt->evt == HCI_VENDOR_SPECIFIC_DEBUG_EVT_CODE) {
         if(blecore_evt->ecode == ACI_GATT_ATTRIBUTE_MODIFIED_VSEVT_CODE) {
             // Process modification events
@@ -274,6 +275,7 @@ bool ble_svc_hid_update_input_report(
         .data_ptr = data,
         .data_len = len,
     };
+
     return ble_gatt_characteristic_update(
         hid_svc->svc_handle, &hid_svc->input_report_chars[input_report_num], &report_data);
 }

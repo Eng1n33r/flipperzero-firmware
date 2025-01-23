@@ -280,6 +280,8 @@ static uint16_t u2f_register(U2fData* U2F, uint8_t* buf) {
         MCHECK(mbedtls_md_hmac_update(&hmac_ctx, private, sizeof(private)));
         MCHECK(mbedtls_md_hmac_update(&hmac_ctx, req->app_id, sizeof(req->app_id)));
         MCHECK(mbedtls_md_hmac_finish(&hmac_ctx, handle.hash));
+
+        mbedtls_md_free(&hmac_ctx);
     }
 
     // Generate public key
@@ -387,6 +389,8 @@ static uint16_t u2f_authenticate(U2fData* U2F, uint8_t* buf) {
         MCHECK(mbedtls_md_hmac_update(&hmac_ctx, priv_key, sizeof(priv_key)));
         MCHECK(mbedtls_md_hmac_update(&hmac_ctx, req->app_id, sizeof(req->app_id)));
         MCHECK(mbedtls_md_hmac_finish(&hmac_ctx, mac_control));
+
+        mbedtls_md_free(&hmac_ctx);
     }
 
     if(memcmp(req->key_handle.hash, mac_control, sizeof(mac_control)) != 0) {

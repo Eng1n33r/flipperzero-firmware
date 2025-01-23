@@ -23,12 +23,17 @@
 
 #define THREAD_MAX_STACK_SIZE (UINT16_MAX * sizeof(StackType_t))
 
-typedef struct FuriThreadStdout FuriThreadStdout;
-
-struct FuriThreadStdout {
+typedef struct {
     FuriThreadStdoutWriteCallback write_callback;
     FuriString* buffer;
-};
+    void* context;
+} FuriThreadStdout;
+
+typedef struct {
+    FuriThreadStdinReadCallback read_callback;
+    FuriString* unread_buffer; // <! stores data from `ungetc` and friends
+    void* context;
+} FuriThreadStdin;
 
 struct FuriThread {
     StaticTask_t container;
@@ -55,6 +60,7 @@ struct FuriThread {
     size_t heap_size;
 
     FuriThreadStdout output;
+    FuriThreadStdin input;
 
     // Keep all non-alignable byte types in one place,
     // this ensures that the size of this structure is minimal
@@ -136,6 +142,7 @@ static void furi_thread_body(void* context) {
 
 static void furi_thread_init_common(FuriThread* thread) {
     thread->output.buffer = furi_string_alloc();
+    thread->input.unread_buffer = furi_string_alloc();
 
     FuriThread* parent = NULL;
     if(xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED) {
@@ -245,6 +252,7 @@ void furi_thread_free(FuriThread* thread) {
     }
 
     furi_string_free(thread->output.buffer);
+    furi_string_free(thread->input.unread_buffer);
     free(thread);
 }
 
@@ -710,11 +718,20 @@ uint32_t furi_thread_get_stack_space(FuriThreadId thread_id) {
 
 static size_t __furi_thread_stdout_write(FuriThread* thread, const char* data, size_t size) {
     if(thread->output.write_callback != NULL) {
-        thread->output.write_callback(data, size);
+        thread->output.write_callback(data, size, thread->output.context);
     } else {
         furi_log_tx((const uint8_t*)data, size);
     }
     return size;
+}
+
+static size_t
+    __furi_thread_stdin_read(FuriThread* thread, char* data, size_t size, FuriWait timeout) {
+    if(thread->input.read_callback != NULL) {
+        return thread->input.read_callback(data, size, timeout, thread->input.context);
+    } else {
+        return 0;
+    }
 }
 
 static int32_t __furi_thread_stdout_flush(FuriThread* thread) {
@@ -727,17 +744,31 @@ static int32_t __furi_thread_stdout_flush(FuriThread* thread) {
     return 0;
 }
 
-void furi_thread_set_stdout_callback(FuriThreadStdoutWriteCallback callback) {
-    FuriThread* thread = furi_thread_get_current();
-    furi_check(thread);
-    __furi_thread_stdout_flush(thread);
-    thread->output.write_callback = callback;
-}
-
 FuriThreadStdoutWriteCallback furi_thread_get_stdout_callback(void) {
     FuriThread* thread = furi_thread_get_current();
     furi_check(thread);
     return thread->output.write_callback;
+}
+
+FuriThreadStdinReadCallback furi_thread_get_stdin_callback(void) {
+    FuriThread* thread = furi_thread_get_current();
+    furi_check(thread);
+    return thread->input.read_callback;
+}
+
+void furi_thread_set_stdout_callback(FuriThreadStdoutWriteCallback callback, void* context) {
+    FuriThread* thread = furi_thread_get_current();
+    furi_check(thread);
+    __furi_thread_stdout_flush(thread);
+    thread->output.write_callback = callback;
+    thread->output.context = context;
+}
+
+void furi_thread_set_stdin_callback(FuriThreadStdinReadCallback callback, void* context) {
+    FuriThread* thread = furi_thread_get_current();
+    furi_check(thread);
+    thread->input.read_callback = callback;
+    thread->input.context = context;
 }
 
 size_t furi_thread_stdout_write(const char* data, size_t size) {
@@ -770,6 +801,31 @@ int32_t furi_thread_stdout_flush(void) {
     furi_check(thread);
 
     return __furi_thread_stdout_flush(thread);
+}
+
+size_t furi_thread_stdin_read(char* buffer, size_t size, FuriWait timeout) {
+    FuriThread* thread = furi_thread_get_current();
+    furi_check(thread);
+
+    size_t from_buffer = MIN(furi_string_size(thread->input.unread_buffer), size);
+    size_t from_input = size - from_buffer;
+    size_t from_input_actual =
+        __furi_thread_stdin_read(thread, buffer + from_buffer, from_input, timeout);
+    memcpy(buffer, furi_string_get_cstr(thread->input.unread_buffer), from_buffer);
+    furi_string_right(thread->input.unread_buffer, from_buffer);
+
+    return from_buffer + from_input_actual;
+}
+
+void furi_thread_stdin_unread(char* buffer, size_t size) {
+    FuriThread* thread = furi_thread_get_current();
+    furi_check(thread);
+
+    FuriString* new_buf = furi_string_alloc(); // there's no furi_string_alloc_set_strn :(
+    furi_string_set_strn(new_buf, buffer, size);
+    furi_string_cat(new_buf, thread->input.unread_buffer);
+    furi_string_free(thread->input.unread_buffer);
+    thread->input.unread_buffer = new_buf;
 }
 
 void furi_thread_suspend(FuriThreadId thread_id) {

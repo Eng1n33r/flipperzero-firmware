@@ -38,6 +38,7 @@ typedef struct {
 
 typedef struct {
     uint32_t auto_lock_delay_ms;
+    uint8_t usb_inhibit_auto_lock;
     uint8_t displayBatteryPercentage;
     uint8_t dummy_mode;
     uint8_t display_clock;

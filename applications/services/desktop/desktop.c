@@ -13,6 +13,8 @@
 #include "scenes/desktop_scene.h"
 #include "scenes/desktop_scene_locked.h"
 
+#include "furi_hal_power.h"
+
 #define TAG "Desktop"
 
 static void desktop_auto_lock_arm(Desktop*);
@@ -131,6 +133,7 @@ static bool desktop_custom_event_callback(void* context, uint32_t event) {
         }
 
         desktop_auto_lock_inhibit(desktop);
+
         desktop->app_running = true;
 
         furi_semaphore_release(desktop->animation_semaphore);
@@ -142,9 +145,13 @@ static bool desktop_custom_event_callback(void* context, uint32_t event) {
 
     } else if(event == DesktopGlobalAutoLock) {
         if(!desktop->app_running && !desktop->locked) {
+            // Disable AutoLock if usb_inhibit_autolock option enabled and device have active USB session.
+            if((desktop->settings.usb_inhibit_auto_lock) && (furi_hal_usb_is_locked())) {
+                return (0);
+            }
+            
             desktop_lock(desktop);
         }
-
     } else if(event == DesktopGlobalSaveSettings) {
         desktop_settings_save(&desktop->settings);
         desktop_apply_settings(desktop);
@@ -199,8 +206,10 @@ static void desktop_stop_auto_lock_timer(Desktop* desktop) {
 
 static void desktop_auto_lock_arm(Desktop* desktop) {
     if(desktop->settings.auto_lock_delay_ms) {
-        desktop->input_events_subscription = furi_pubsub_subscribe(
-            desktop->input_events_pubsub, desktop_input_event_callback, desktop);
+        if(!desktop->input_events_subscription) {
+            desktop->input_events_subscription = furi_pubsub_subscribe(
+                desktop->input_events_pubsub, desktop_input_event_callback, desktop);
+        }
         desktop_start_auto_lock_timer(desktop);
     }
 }

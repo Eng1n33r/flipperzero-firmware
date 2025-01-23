@@ -166,7 +166,7 @@ void mf_classic_key_cache_load_from_data(MfClassicKeyCache* instance, const MfCl
     }
 }
 
-bool mf_classic_key_cahce_get_next_key(
+bool mf_classic_key_cache_get_next_key(
     MfClassicKeyCache* instance,
     uint8_t* sector_num,
     MfClassicKey* key,

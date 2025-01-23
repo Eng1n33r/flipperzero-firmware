@@ -27,65 +27,51 @@ MfPlusError mf_plus_get_type_from_version(
 
     MfPlusError error = MfPlusErrorProtocol;
 
-    if(mf_plus_data->version.hw_major == 0x02 || mf_plus_data->version.hw_major == 0x82) {
+    if(mf_plus_data->version.hw_type == 0x02 || mf_plus_data->version.hw_type == 0x82) {
         error = MfPlusErrorNone;
-        if(iso14443_4a_data->iso14443_3a_data->sak == 0x10) {
-            // Mifare Plus 2K SL2
-            mf_plus_data->type = MfPlusTypePlus;
+        // Mifare Plus EV1/EV2
+
+        // Revision
+        switch(mf_plus_data->version.hw_major) {
+        case 0x11:
+            mf_plus_data->type = MfPlusTypeEV1;
+            FURI_LOG_D(TAG, "Mifare Plus EV1");
+            break;
+        case 0x22:
+            mf_plus_data->type = MfPlusTypeEV2;
+            FURI_LOG_D(TAG, "Mifare Plus EV2");
+            break;
+        default:
+            mf_plus_data->type = MfPlusTypeUnknown;
+            FURI_LOG_D(TAG, "Unknown Mifare Plus EV type");
+            break;
+        }
+
+        // Storage size
+        switch(mf_plus_data->version.hw_storage) {
+        case 0x16:
             mf_plus_data->size = MfPlusSize2K;
-            mf_plus_data->security_level = MfPlusSecurityLevel2;
-            FURI_LOG_D(TAG, "Mifare Plus 2K SL2");
-        } else if(iso14443_4a_data->iso14443_3a_data->sak == 0x11) {
-            // Mifare Plus 4K SL3
-            mf_plus_data->type = MfPlusTypePlus;
+            FURI_LOG_D(TAG, "2K");
+            break;
+        case 0x18:
             mf_plus_data->size = MfPlusSize4K;
+            FURI_LOG_D(TAG, "4K");
+            break;
+        default:
+            mf_plus_data->size = MfPlusSizeUnknown;
+            FURI_LOG_D(TAG, "Unknown storage size");
+            break;
+        }
+
+        // Security level
+        if(iso14443_4a_data->iso14443_3a_data->sak == 0x20) {
+            // Mifare Plus EV1/2 SL3
             mf_plus_data->security_level = MfPlusSecurityLevel3;
-            FURI_LOG_D(TAG, "Mifare Plus 4K SL3");
+            FURI_LOG_D(TAG, "Mifare Plus EV1/2 SL3");
         } else {
-            // Mifare Plus EV1/EV2
-
-            // Revision
-            switch(mf_plus_data->version.hw_major) {
-            case 0x11:
-                mf_plus_data->type = MfPlusTypeEV1;
-                FURI_LOG_D(TAG, "Mifare Plus EV1");
-                break;
-            case 0x22:
-                mf_plus_data->type = MfPlusTypeEV2;
-                FURI_LOG_D(TAG, "Mifare Plus EV2");
-                break;
-            default:
-                mf_plus_data->type = MfPlusTypeUnknown;
-                FURI_LOG_D(TAG, "Unknown Mifare Plus EV type");
-                break;
-            }
-
-            // Storage size
-            switch(mf_plus_data->version.hw_storage) {
-            case 0x16:
-                mf_plus_data->size = MfPlusSize2K;
-                FURI_LOG_D(TAG, "2K");
-                break;
-            case 0x18:
-                mf_plus_data->size = MfPlusSize4K;
-                FURI_LOG_D(TAG, "4K");
-                break;
-            default:
-                mf_plus_data->size = MfPlusSizeUnknown;
-                FURI_LOG_D(TAG, "Unknown storage size");
-                break;
-            }
-
-            // Security level
-            if(iso14443_4a_data->iso14443_3a_data->sak == 0x20) {
-                // Mifare Plus EV1/2 SL3
-                mf_plus_data->security_level = MfPlusSecurityLevel3;
-                FURI_LOG_D(TAG, "Miare Plus EV1/2 SL3");
-            } else {
-                // Mifare Plus EV1/2 SL1
-                mf_plus_data->security_level = MfPlusSecurityLevel1;
-                FURI_LOG_D(TAG, "Miare Plus EV1/2 SL1");
-            }
+            // Mifare Plus EV1/2 SL1
+            mf_plus_data->security_level = MfPlusSecurityLevel1;
+            FURI_LOG_D(TAG, "Mifare Plus EV1/2 SL1");
         }
     }
 
@@ -147,6 +133,24 @@ MfPlusError
         } else {
             FURI_LOG_D(TAG, "Sak 08 but no known Mifare Plus type");
         }
+
+        break;
+    case 0x10:
+        // Mifare Plus X 2K SL2
+        mf_plus_data->type = MfPlusTypeX;
+        mf_plus_data->size = MfPlusSize2K;
+        mf_plus_data->security_level = MfPlusSecurityLevel2;
+        FURI_LOG_D(TAG, "Mifare Plus X 2K SL2");
+        error = MfPlusErrorNone;
+
+        break;
+    case 0x11:
+        // Mifare Plus X 4K SL2
+        mf_plus_data->type = MfPlusTypeX;
+        mf_plus_data->size = MfPlusSize4K;
+        mf_plus_data->security_level = MfPlusSecurityLevel2;
+        FURI_LOG_D(TAG, "Mifare Plus X 4K SL2");
+        error = MfPlusErrorNone;
 
         break;
     case 0x18:
@@ -234,10 +238,22 @@ MfPlusError
 }
 
 MfPlusError mf_plus_version_parse(MfPlusVersion* data, const BitBuffer* buf) {
-    const bool can_parse = bit_buffer_get_size_bytes(buf) == sizeof(MfPlusVersion);
+    bool can_parse = bit_buffer_get_size_bytes(buf) == sizeof(MfPlusVersion);
 
     if(can_parse) {
         bit_buffer_write_bytes(buf, data, sizeof(MfPlusVersion));
+    } else if(
+        bit_buffer_get_size_bytes(buf) == 8 &&
+        bit_buffer_get_byte(buf, 0) == MF_PLUS_STATUS_ADDITIONAL_FRAME) {
+        // HACK(-nofl): There are supposed to be three parts to the GetVersion command,
+        // with the second and third parts fetched by sending the AdditionalFrame
+        // command. I don't know whether the entire MIFARE Plus line uses status as
+        // the first byte, so let's just assume we only have the first part of
+        // the response if it's size 8 and starts with the AF status. The second
+        // part of the response is the same size and status byte, but so far
+        // we're only reading one response.
+        can_parse = true;
+        bit_buffer_write_bytes_mid(buf, data, 1, bit_buffer_get_size_bytes(buf) - 1);
     }
 
     return can_parse ? MfPlusErrorNone : MfPlusErrorProtocol;

@@ -15,6 +15,7 @@ typedef struct {
     void (*state_callback)(void* context, uint8_t state);
     void (*ctrl_line_callback)(void* context, uint8_t state);
     void (*config_callback)(void* context, struct usb_cdc_line_coding* config);
+    void (*break_callback)(void* context, uint16_t duration);
 } CdcCallbacks;
 
 void furi_hal_cdc_set_callbacks(uint8_t if_num, CdcCallbacks* cb, void* context);

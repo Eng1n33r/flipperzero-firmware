@@ -102,7 +102,8 @@ static const IdMapping bart_zones[] = {
     {.id = 0x001d, .name = "Lake Merrit"},
     {.id = 0x001e, .name = "Fruitvale"},
     {.id = 0x001f, .name = "Coliseum"},
-    {.id = 0x0021, .name = "San Leandro"},
+    {.id = 0x0020, .name = "San Leandro"},
+    {.id = 0x0021, .name = "Bay Fair"},
     {.id = 0x0022, .name = "Hayward"},
     {.id = 0x0023, .name = "South Hayward"},
     {.id = 0x0024, .name = "Union City"},
@@ -132,6 +133,9 @@ static const IdMapping muni_zones[] = {
     {.id = 0x000b, .name = "Castro"},
     {.id = 0x000c, .name = "Forest Hill"}, // Guessed
     {.id = 0x000d, .name = "West Portal"},
+    {.id = 0x0019, .name = "Union Square/Market Street"},
+    {.id = 0x001a, .name = "Chinatown - Rose Pak"},
+    {.id = 0x001b, .name = "Yerba Buena/Moscone"},
 };
 static const size_t kNumMUNIZones = COUNT(muni_zones);
 

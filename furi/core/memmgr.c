@@ -106,5 +106,7 @@ void* aligned_malloc(size_t size, size_t alignment) {
 }
 
 void aligned_free(void* p) {
-    free(((void**)p)[-1]);
+    if(p) {
+        free(((void**)p)[-1]);
+    }
 }

@@ -29,6 +29,8 @@ env = ENV.Clone(
     TARGETS_ROOT=Dir("#/targets"),
     LINT_SOURCES=[
         Dir("applications"),
+        # Not C code
+        Dir("!applications/system/js_app/packages"),
     ],
     LIBPATH=[
         "${LIB_DIST_DIR}",

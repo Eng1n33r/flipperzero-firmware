@@ -310,9 +310,11 @@ static bool plantain_parse(const NfcDevice* device, FuriString* parsed_data) {
                 last_payment_date.year,
                 last_payment_date.hour,
                 last_payment_date.minute);
-            //payment amount. This needs to be investigated more, currently it shows incorrect amount on some cards.
-            uint16_t last_payment = (data->block[18].data[9] << 8) | data->block[18].data[8];
-            furi_string_cat_printf(parsed_data, "Amount: %d rub", last_payment / 100);
+            //Last payment amount.
+            uint16_t last_payment = ((data->block[18].data[10] << 16) |
+                                     (data->block[18].data[9] << 8) | (data->block[18].data[8])) /
+                                    100;
+            furi_string_cat_printf(parsed_data, "Amount: %d rub", last_payment);
             furi_string_free(card_number_s);
             furi_string_free(tmp_s);
             //This is for 4K Plantains.
@@ -369,9 +371,11 @@ static bool plantain_parse(const NfcDevice* device, FuriString* parsed_data) {
                 last_payment_date.year,
                 last_payment_date.hour,
                 last_payment_date.minute);
-            //payment amount
-            uint16_t last_payment = (data->block[18].data[9] << 8) | data->block[18].data[8];
-            furi_string_cat_printf(parsed_data, "Amount: %d rub", last_payment / 100);
+            //Last payment amount
+            uint16_t last_payment = ((data->block[18].data[10] << 16) |
+                                     (data->block[18].data[9] << 8) | (data->block[18].data[8])) /
+                                    100;
+            furi_string_cat_printf(parsed_data, "Amount: %d rub", last_payment);
             furi_string_free(card_number_s);
             furi_string_free(tmp_s);
         }

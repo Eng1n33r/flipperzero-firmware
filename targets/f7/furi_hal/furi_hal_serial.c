@@ -950,3 +950,13 @@ const GpioPin*
 
     return furi_hal_serial_config[handle->id].gpio[direction];
 }
+
+void furi_hal_serial_send_break(FuriHalSerialHandle* handle) {
+    furi_check(handle);
+
+    if(handle->id == FuriHalSerialIdUsart) {
+        LL_USART_RequestBreakSending(USART1);
+    } else {
+        LL_LPUART_RequestBreakSending(LPUART1);
+    }
+}

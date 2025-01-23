@@ -146,7 +146,7 @@ static void mf_plus_poller_set_callback(
 
 static NfcCommand mf_plus_poller_run(NfcGenericEvent event, void* context) {
     furi_assert(context);
-    furi_assert(event.protocol = NfcProtocolIso14443_4a);
+    furi_assert(event.protocol == NfcProtocolIso14443_4a);
     furi_assert(event.event_data);
 
     MfPlusPoller* instance = context;
@@ -178,7 +178,7 @@ void mf_plus_poller_free(MfPlusPoller* instance) {
 
 static bool mf_plus_poller_detect(NfcGenericEvent event, void* context) {
     furi_assert(context);
-    furi_assert(event.protocol = NfcProtocolIso14443_4a);
+    furi_assert(event.protocol == NfcProtocolIso14443_4a);
     furi_assert(event.event_data);
 
     MfPlusPoller* instance = context;

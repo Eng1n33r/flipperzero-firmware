@@ -57,6 +57,7 @@ static CdcCallbacks cdc_cb = {
     vcp_state_callback,
     vcp_on_cdc_control_line,
     NULL,
+    NULL,
 };
 
 static CliVcp* vcp = NULL;
@@ -242,6 +243,11 @@ static size_t cli_vcp_rx(uint8_t* buffer, size_t size, uint32_t timeout) {
     return rx_cnt;
 }
 
+static size_t cli_vcp_rx_stdin(uint8_t* data, size_t size, uint32_t timeout, void* context) {
+    UNUSED(context);
+    return cli_vcp_rx(data, size, timeout);
+}
+
 static void cli_vcp_tx(const uint8_t* buffer, size_t size) {
     furi_assert(vcp);
     furi_assert(buffer);
@@ -267,7 +273,8 @@ static void cli_vcp_tx(const uint8_t* buffer, size_t size) {
     VCP_DEBUG("tx %u end", size);
 }
 
-static void cli_vcp_tx_stdout(const char* data, size_t size) {
+static void cli_vcp_tx_stdout(const char* data, size_t size, void* context) {
+    UNUSED(context);
     cli_vcp_tx((const uint8_t*)data, size);
 }
 
@@ -310,6 +317,7 @@ CliSession cli_vcp = {
     cli_vcp_init,
     cli_vcp_deinit,
     cli_vcp_rx,
+    cli_vcp_rx_stdin,
     cli_vcp_tx,
     cli_vcp_tx_stdout,
     cli_vcp_is_connected,

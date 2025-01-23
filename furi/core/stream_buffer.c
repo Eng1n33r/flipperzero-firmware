@@ -54,6 +54,11 @@ bool furi_stream_set_trigger_level(FuriStreamBuffer* stream_buffer, size_t trigg
            pdTRUE;
 }
 
+size_t furi_stream_get_trigger_level(FuriStreamBuffer* stream_buffer) {
+    furi_check(stream_buffer);
+    return ((StaticStreamBuffer_t*)stream_buffer)->xTriggerLevelBytes;
+}
+
 size_t furi_stream_buffer_send(
     FuriStreamBuffer* stream_buffer,
     const void* data,

@@ -43,7 +43,7 @@ To add unit tests for your protocol, follow these steps:
 
 1. Create a file named `test_<your_protocol_name>.irtest` in the [assets](https://github.com/flipperdevices/flipperzero-firmware/tree/dev/applications/debug/unit_tests/resources/unit_tests/infrared) directory.
 2. Fill it with the test data (more on it below).
-3. Add the test code to [infrared_test.c](https://github.com/flipperdevices/flipperzero-firmware/blob/dev/applications/debug/unit_tests/infrared/infrared_test.c).
+3. Add the test code to [infrared_test.c](https://github.com/flipperdevices/flipperzero-firmware/blob/dev/applications/debug/unit_tests/tests/infrared/infrared_test.c).
 4. Build and install firmware with resources, install it on your Flipper and run the tests to see if they pass.
 
 ##### Test data format

@@ -55,6 +55,17 @@ void furi_stream_buffer_free(FuriStreamBuffer* stream_buffer);
 bool furi_stream_set_trigger_level(FuriStreamBuffer* stream_buffer, size_t trigger_level);
 
 /**
+ * @brief Get trigger level for stream buffer.
+ * A stream buffer's trigger level is the number of bytes that must be in the
+ * stream buffer before a task that is blocked on the stream buffer to
+ * wait for data is moved out of the blocked state.
+ * 
+ * @param stream_buffer The stream buffer instance
+ * @return The trigger level for the stream buffer
+ */
+size_t furi_stream_get_trigger_level(FuriStreamBuffer* stream_buffer);
+
+/**
  * @brief Sends bytes to a stream buffer. The bytes are copied into the stream buffer.
  * Wakes up task waiting for data to become available if called from ISR.
  * 
