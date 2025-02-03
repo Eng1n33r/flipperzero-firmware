@@ -273,3 +273,14 @@ See full list and sources here: [xMasterX/all-the-plugins](https://github.com/xM
 - `scripts`         - Supplementary scripts and python libraries home
 
 Also, pay attention to the `ReadMe.md` files inside those directories.
+## AI-generated ProductMaps
+
+
+
+| Github file | ProductMap |
+|-------------|------------|
+| [subghz.c](https://github.com/DarkFlippers/unleashed-firmware/blob/dev/applications/main/subghz/subghz.c) | [Link to Map](https://product-map.ai/app/public?url=https://github.com/DarkFlippers/unleashed-firmware/blob/dev/applications/main/subghz/subghz.c) |
+
+Contact ProductMap if you have any questions at [juan@product-map.ai](juan@product-map.ai).
+
+Last updated on Mon Feb 03 22:53:28 UTC 2025.
