@@ -41,6 +41,7 @@ struct Power {
     bool app_running;
     FuriPubSub* input_events_pubsub;
     FuriPubSubSubscription* input_events_subscription;
+    bool charge_is_supressed;
 };
 
 typedef enum {

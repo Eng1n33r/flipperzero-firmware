@@ -466,7 +466,7 @@ new file mode 100644
 index 0000000..b89f82a
 --- /dev/null
 +++ b/lib/drivers/SK6805.c
-@@ -0,0 +1,101 @@
+@@ -0,0 +1,103 @@
 +/*
 +    SK6805 FlipperZero driver
 +    Copyright (C) 2022-2023 Victor Nikitchuk (https://github.com/quen0n)
@@ -527,6 +527,7 @@ index 0000000..b89f82a
 +void SK6805_update(void) {
 +    SK6805_init();
 +    FURI_CRITICAL_ENTER();
++    furi_delay_us(150);
 +    uint32_t end;
 +    /* Последовательная отправка цветов светодиодов */
 +    for(uint8_t lednumber = 0; lednumber < SK6805_LED_COUNT; lednumber++) {
@@ -566,6 +567,7 @@ index 0000000..b89f82a
 +            }
 +        }
 +    }
++    furi_delay_us(150);
 +    FURI_CRITICAL_EXIT();
 +}
 diff --git a/lib/drivers/SK6805.h b/lib/drivers/SK6805.h

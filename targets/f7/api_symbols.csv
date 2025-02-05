@@ -1,5 +1,5 @@
 entry,status,name,type,params
-Version,+,79.3,,
+Version,+,79.4,,
 Header,+,applications/drivers/subghz/cc1101_ext/cc1101_ext_interconnect.h,,
 Header,+,applications/services/bt/bt_service/bt.h,,
 Header,+,applications/services/bt/bt_service/bt_keys_storage.h,,
@@ -2112,6 +2112,8 @@ Function,+,infrared_worker_tx_stop,void,InfraredWorker*
 Function,-,initstate,char*,"unsigned, char*, size_t"
 Function,+,input_get_key_name,const char*,InputKey
 Function,+,input_get_type_name,const char*,InputType
+Function,+,input_settings_load,void,InputSettings*
+Function,+,input_settings_save,void,const InputSettings*
 Function,-,iprintf,int,"const char*, ..."
 Function,-,isalnum,int,int
 Function,-,isalnum_l,int,"int, locale_t"
